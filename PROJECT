@@ -1,0 +1,11 @@
+domain: openshift.io
+layout: go.kubebuilder.io/v2
+projectName: tst-cluster-hosted
+repo: github.com/yboaron/cluster-hosted-operator
+resources:
+- group: clusterstack
+  kind: Config
+  version: v1beta1
+version: 3-alpha
+plugins:
+  go.sdk.operatorframework.io/v2-alpha: {}
