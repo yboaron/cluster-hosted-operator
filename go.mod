@@ -9,6 +9,7 @@ require (
 	github.com/onsi/gomega v1.10.3
 	github.com/openshift/cluster-network-operator v0.0.0-20201105033330-1ee0aaf1bdb8
 	github.com/pkg/errors v0.9.1
+	k8s.io/api v0.19.2
 	k8s.io/apimachinery v0.19.3
 	k8s.io/client-go v11.0.0+incompatible
 	sigs.k8s.io/controller-runtime v0.6.3

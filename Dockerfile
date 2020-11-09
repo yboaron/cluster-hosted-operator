@@ -14,12 +14,6 @@ COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
 
-COPY config/rbac/role.yaml /bindata/cluster-hosted/rbac/
-COPY config/rbac/role_binding.yaml /bindata/cluster-hosted/rbac/
-COPY deploy/handler/service_account.yaml   /bindata/cluster-hosted/rbac/
-COPY deploy/handler/namespace.yaml   /bindata/cluster-hosted/namespace/
-COPY deploy/handler/operator.yaml   /bindata/cluster-hosted/keepalived/
-
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
 
@@ -28,6 +22,11 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager 
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/manager .
+COPY config/rbac/role.yaml /bindata/cluster-hosted/rbac/
+COPY config/rbac/role_binding.yaml /bindata/cluster-hosted/rbac/
+COPY deploy/handler/service_account.yaml   /bindata/cluster-hosted/rbac/
+COPY deploy/handler/namespace.yaml   /bindata/cluster-hosted/namespace/
+COPY deploy/handler/operator.yaml   /bindata/cluster-hosted/keepalived/
 USER nonroot:nonroot
 
 ENTRYPOINT ["/manager"]

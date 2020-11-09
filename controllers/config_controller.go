@@ -19,22 +19,20 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/go-logr/logr"
-
 	"github.com/openshift/cluster-network-operator/pkg/apply"
 	"github.com/openshift/cluster-network-operator/pkg/render"
+	corev1 "k8s.io/api/core/v1"
 	uns "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/pkg/errors"
-	"github.com/yboaron/cluster-hosted-operator/pkg/names"
+	clusterstackv1beta1 "github.com/yboaron/cluster-hosted-operator/api/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	//clusterstackv1beta1 "github.com/yboaron/cluster-hosted-operator/api/v1beta1"
-	clusterstackv1beta1 "github.com/yboaron/cluster-hosted-operator/api/v1beta1"
 )
 
 // ConfigReconciler reconciles a Config object
@@ -48,6 +46,7 @@ type ConfigReconciler struct {
 // +kubebuilder:rbac:groups=clusterstack.openshift.io,resources=configs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=daemonsets/status,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 
 func (r *ConfigReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctxt := context.Background()
@@ -62,48 +61,44 @@ func (r *ConfigReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	r.Log.Info("Returned object name", "name", req.NamespacedName.Name)
 
-	err = r.applyKeepalived(instance)
+	err = r.syncNamespace(instance)
 	if err != nil {
-		errors.Wrap(err, "failed applying LB")
+		errors.Wrap(err, "failed applying Namespace")
 		return ctrl.Result{}, err
 	}
-
+	/*
+		err = r.applyKeepalived(instance)
+		if err != nil {
+			errors.Wrap(err, "failed applying LB")
+			return ctrl.Result{}, err
+		}
+	*/
 	return ctrl.Result{}, nil
 }
 
 func (r *ConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&clusterstackv1beta1.Config{}).
+		Owns(&corev1.Namespace{}).
 		Complete(r)
 }
+func (r *ConfigReconciler) syncNamespace(instance *clusterstackv1beta1.Config) error {
 
-func (r *ConfigReconciler) applyKeepalived(instance *clusterstackv1beta1.Config) error {
-	if instance.Spec.LoadBalancer == "Enable" {
-
-		data := render.MakeRenderData()
-
-		data.Data["HandlerNamespace"] = "cluster-config"
-		data.Data["HandlerPrefix"] = "tst1"
-		data.Data["onPremPlatformAPIServerInternalIP"] = "192.168.111.5"
-		data.Data["onPremPlatformIngressIP"] = "192.168.111.4"
-
-		err := r.renderAndApply(instance, data, "handler")
-		return err
-	} else {
-		// TODO disable Keepalived code
-	}
-	return nil
+	// TODO:  add here code to check if namespace exists
+	data := render.MakeRenderData()
+	data.Data["HandlerNamespace"] = os.Getenv("HANDLER_NAMESPACE")
+	return r.renderAndApply(instance, data, "namespace")
 }
 
 func (r *ConfigReconciler) renderAndApply(instance *clusterstackv1beta1.Config, data render.RenderData, sourceDirectory string) error {
 	var err error
 	objs := []*uns.Unstructured{}
 
-	sourceFullDirectory := filepath.Join(names.ManifestDir, "kubernetes-nmstate", sourceDirectory)
+	sourceFullDirectory := filepath.Join( /*names.ManifestDir*/ "./bindata", "cluster-hosted", sourceDirectory)
 
 	objs, err = render.RenderDir(sourceFullDirectory, &data)
 	if err != nil {
-		return errors.Wrapf(err, "failed to render kubernetes-nmstate %s", sourceDirectory)
+		return errors.Wrapf(err, "failed to render cluster-hosted %s", sourceDirectory)
 	}
 
 	// If no file found in directory - return error

@@ -22,11 +22,17 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+      effect: NoSchedule
       containers:
       - command:
         - /manager
         args:
         - --enable-leader-election
+        env:
+          - name: HANDLER_NAMESPACE
+            value: "cluster-hosted"
         image: controller:latest
         name: manager
         resources:
