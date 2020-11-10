@@ -46,7 +46,9 @@ type ConfigReconciler struct {
 // +kubebuilder:rbac:groups=clusterstack.openshift.io,resources=configs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=daemonsets/status,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=namespaces;configmaps;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings;rolebindings;roles,verbs="*"
+// +kubebuilder:rbac:groups="security.openshift.io",resources=securitycontextconstraints,verbs=get;list;watch;create;update;patch;delete
 
 func (r *ConfigReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctxt := context.Background()
@@ -66,14 +68,50 @@ func (r *ConfigReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		errors.Wrap(err, "failed applying Namespace")
 		return ctrl.Result{}, err
 	}
-	/*
-		err = r.applyKeepalived(instance)
-		if err != nil {
-			errors.Wrap(err, "failed applying LB")
-			return ctrl.Result{}, err
-		}
-	*/
+
+	err = r.syncRBAC(instance)
+	if err != nil {
+		errors.Wrap(err, "failed applying Namespace")
+		return ctrl.Result{}, err
+	}
+
+	err = r.syncKeepalived(instance)
+	if err != nil {
+		errors.Wrap(err, "failed applying LB")
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
+}
+
+func (r *ConfigReconciler) syncRBAC(instance *clusterstackv1beta1.Config) error {
+
+	// TODO:  add here code to check if RBAC resources already exist
+	data := render.MakeRenderData()
+	data.Data["HandlerNamespace"] = os.Getenv("HANDLER_NAMESPACE")
+
+	err := r.renderAndApply(instance, data, "rbac")
+	if err != nil {
+		errors.Wrap(err, "failed applying RBAC")
+		return err
+	}
+	return r.renderAndApply(instance, data, "rbac")
+}
+
+func (r *ConfigReconciler) syncKeepalived(instance *clusterstackv1beta1.Config) error {
+
+	// TODO:  add here code to check if Keepalived resources already exist
+	data := render.MakeRenderData()
+	data.Data["HandlerNamespace"] = os.Getenv("HANDLER_NAMESPACE")
+	data.Data["OnPremPlatformAPIServerInternalIP"] = os.Getenv("ON_PREM_API_VIP")
+	data.Data["OnPremPlatformIngressIP"] = os.Getenv("ON_PREM_INGRESS_VIP")
+
+	err := r.renderAndApply(instance, data, "keepalived-configmap")
+	if err != nil {
+		errors.Wrap(err, "failed applying keepalived-configmap ")
+		return err
+	}
+	return r.renderAndApply(instance, data, "keepalived-daemonset")
 }
 
 func (r *ConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {

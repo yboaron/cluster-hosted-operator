@@ -1,9 +1,8 @@
-{{define "handlerPrefix"}}{{with $prefix := .HandlerPrefix}}{{$prefix | printf "%s-"}}{{end -}}{{end}}
 ---
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
-  name: nmstate
+  name: cluster-hosted-handler
 allowPrivilegedContainer: true
 allowHostDirVolumePlugin: true
 allowHostNetwork: true
@@ -16,4 +15,4 @@ runAsUser:
 seLinuxContext:
   type: RunAsAny
 users:
-- system:serviceaccount:{{ .HandlerNamespace }}:{{template "handlerPrefix" .}}nmstate-handler
+- system:serviceaccount:{{ .HandlerNamespace }}:cluster-hosted-handler

@@ -24,7 +24,7 @@ spec:
     spec:
       tolerations:
       - key: node-role.kubernetes.io/master
-      effect: NoSchedule
+        effect: NoSchedule
       containers:
       - command:
         - /manager
@@ -33,6 +33,10 @@ spec:
         env:
           - name: HANDLER_NAMESPACE
             value: "cluster-hosted"
+          - name: ON_PREM_API_VIP
+            value: "192.168.111.99"
+          - name: ON_PREM_INGRESS_VIP
+            value: "192.168.111.88"
         image: controller:latest
         name: manager
         resources:
