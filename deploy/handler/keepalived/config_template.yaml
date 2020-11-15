@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: keepalived-master-template
+  name: keepalived-template
   namespace: {{ .HandlerNamespace }}
 data:
-  keepalived.conf.tmpl: |
+  master-keepalived.conf.tmpl: |
     global_defs {
         enable_script_security
         script_user root
@@ -97,3 +97,37 @@ data:
             chk_ingress
         }
     }
+  worker-keepalived.conf.tmpl: |
+    # TODO: Improve this check. The port is assumed to be alive.
+    # Need to assess what is the ramification if the port is not there.
+    vrrp_script chk_ingress {
+        script "/usr/bin/curl -o /dev/null -Lfs http://localhost:1936/healthz/ready"
+        interval 1
+        weight 50
+    }
+    {{`{{$nonVirtualIP := .NonVirtualIP}}`}}
+    vrrp_instance {{`{{ .Cluster.Name }}`}}_INGRESS {
+        state BACKUP
+        interface {{`{{ .VRRPInterface }}`}}
+        virtual_router_id {{`{{ .Cluster.IngressVirtualRouterID }}`}}
+        priority 40
+        advert_int 1
+        {{`{{if .EnableUnicast}}`}}
+        unicast_src_ip {{`{{.NonVirtualIP}}`}}
+        unicast_peer {
+            {{`{{range .IngressConfig.Peers}}
+            {{if ne $nonVirtualIP .}}{{.}}{{end}}
+            {{end}}`}}
+        }
+        {{`{{end}}`}}
+        authentication {
+            auth_type PASS
+            auth_pass {{`{{ .Cluster.Name }}`}}_ingress_vip
+        }
+        virtual_ipaddress {
+            {{`{{ .Cluster.IngressVIP }}`}}/{{`{{ .Cluster.VIPNetmask }}`}}
+        }
+        track_script {
+            chk_ingress
+        }
+    }   
