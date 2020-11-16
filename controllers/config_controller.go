@@ -77,7 +77,13 @@ func (r *ConfigReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	err = r.syncKeepalived(instance)
 	if err != nil {
-		errors.Wrap(err, "failed applying LB")
+		errors.Wrap(err, "failed applying Keepalived")
+		return ctrl.Result{}, err
+	}
+
+	err = r.syncHaproxy(instance)
+	if err != nil {
+		errors.Wrap(err, "failed applying Haproxy")
 		return ctrl.Result{}, err
 	}
 
@@ -112,6 +118,21 @@ func (r *ConfigReconciler) syncKeepalived(instance *clusterstackv1beta1.Config) 
 		return err
 	}
 	return r.renderAndApply(instance, data, "keepalived-daemonset")
+}
+
+func (r *ConfigReconciler) syncHaproxy(instance *clusterstackv1beta1.Config) error {
+
+	// TODO:  add here code to check if HAProxy resources already exist
+	data := render.MakeRenderData()
+	data.Data["HandlerNamespace"] = os.Getenv("HANDLER_NAMESPACE")
+	data.Data["OnPremPlatformAPIServerInternalIP"] = os.Getenv("ON_PREM_API_VIP")
+
+	err := r.renderAndApply(instance, data, "haproxy-configmap")
+	if err != nil {
+		errors.Wrap(err, "failed applying haproxy-configmap ")
+		return err
+	}
+	return r.renderAndApply(instance, data, "haproxy-daemonset")
 }
 
 func (r *ConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {

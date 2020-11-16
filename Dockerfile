@@ -29,6 +29,9 @@ COPY deploy/openshift/scc.yaml             /bindata/cluster-hosted/rbac/
 COPY deploy/handler/namespace.yaml   /bindata/cluster-hosted/namespace/
 COPY deploy/handler/keepalived/config_template.yaml   /bindata/cluster-hosted/keepalived-configmap/
 COPY deploy/handler/keepalived/daemonset.yaml   /bindata/cluster-hosted/keepalived-daemonset/
+COPY deploy/handler/haproxy/config_template.yaml   /bindata/cluster-hosted/haproxy-configmap/
+COPY deploy/handler/haproxy/daemonset.yaml   /bindata/cluster-hosted/haproxy-daemonset/
+
 USER nonroot:nonroot
 
 ENTRYPOINT ["/manager"]
