@@ -117,6 +117,8 @@ func (r *ConfigReconciler) syncKeepalived(instance *clusterstackv1beta1.Config) 
 	data.Data["HandlerNamespace"] = os.Getenv("HANDLER_NAMESPACE")
 	data.Data["OnPremPlatformAPIServerInternalIP"] = os.Getenv("ON_PREM_API_VIP")
 	data.Data["OnPremPlatformIngressIP"] = os.Getenv("ON_PREM_INGRESS_VIP")
+	data.Data["BaremetalRuntimeCfgImage"] = os.Getenv("BAREMETAL_RUNTIMECFG_IMAGE")
+	data.Data["KeepalivedImage"] = os.Getenv("KEEPALIVED_IMAGE")
 
 	err := r.renderAndApply(instance, data, "keepalived-configmap")
 	if err != nil {
@@ -133,6 +135,8 @@ func (r *ConfigReconciler) syncMDNS(instance *clusterstackv1beta1.Config) error 
 	data.Data["HandlerNamespace"] = os.Getenv("HANDLER_NAMESPACE")
 	data.Data["OnPremPlatformAPIServerInternalIP"] = os.Getenv("ON_PREM_API_VIP")
 	data.Data["OnPremPlatformIngressIP"] = os.Getenv("ON_PREM_INGRESS_VIP")
+	data.Data["BaremetalRuntimeCfgImage"] = os.Getenv("BAREMETAL_RUNTIMECFG_IMAGE")
+	data.Data["MdnsPublisherImage"] = os.Getenv("MDNS_PUBLISHER_IMAGE")
 
 	err := r.renderAndApply(instance, data, "mdns-configmap")
 	if err != nil {
@@ -148,6 +152,8 @@ func (r *ConfigReconciler) syncHaproxy(instance *clusterstackv1beta1.Config) err
 	data := render.MakeRenderData()
 	data.Data["HandlerNamespace"] = os.Getenv("HANDLER_NAMESPACE")
 	data.Data["OnPremPlatformAPIServerInternalIP"] = os.Getenv("ON_PREM_API_VIP")
+	data.Data["BaremetalRuntimeCfgImage"] = os.Getenv("BAREMETAL_RUNTIMECFG_IMAGE")
+	data.Data["HaproxyImage"] = os.Getenv("HAPROXY_IMAGE")
 
 	err := r.renderAndApply(instance, data, "haproxy-configmap")
 	if err != nil {

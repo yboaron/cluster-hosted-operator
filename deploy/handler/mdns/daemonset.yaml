@@ -36,7 +36,7 @@ spec:
         empty-dir: {}
       initContainers:
       - name: cluster-hosted-verify-hostname
-        image: quay.io/openshift/origin-baremetal-runtimecfg
+        image:  {{ .BaremetalRuntimeCfgImage }}
         command:
         - "/bin/bash"
         - "-c"
@@ -60,7 +60,7 @@ spec:
         - name: conf-dir
           mountPath: "/etc/mdns"
       - name: cluster-hosted-render-config-mdns-publisher
-        image: quay.io/openshift/origin-baremetal-runtimecfg
+        image:  {{ .BaremetalRuntimeCfgImage }}
         command:
         - runtimecfg
         - render
@@ -85,7 +85,7 @@ spec:
         imagePullPolicy: IfNotPresent
       containers:
       - name: cluster-hosted-mdns-publisher
-        image: quay.io/openshift/origin-mdns-publisher
+        image: {{ .MdnsPublisherImage }}
         args:
         - "--debug"
         resources:

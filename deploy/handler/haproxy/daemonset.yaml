@@ -45,7 +45,7 @@ spec:
           path: "/"
       containers:
       - name: cluster-hosted-haproxy
-        image: quay.io/openshift/origin-haproxy-router
+        image: {{ .HaproxyImage }}
         env:
           - name: OLD_HAPROXY_PS_FORCE_DEL_TIMEOUT
             value: "120"
@@ -119,7 +119,7 @@ spec:
       - name: cluster-hosted-haproxy-monitor
         securityContext:
           privileged: true
-        image: quay.io/openshift/origin-baremetal-runtimecfg
+        image:  {{ .BaremetalRuntimeCfgImage }}
         command:
           - "/bin/bash"
           - "-c"
