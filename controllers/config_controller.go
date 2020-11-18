@@ -87,6 +87,12 @@ func (r *ConfigReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	err = r.syncMDNS(instance)
+	if err != nil {
+		errors.Wrap(err, "failed applying MDNS")
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -118,6 +124,22 @@ func (r *ConfigReconciler) syncKeepalived(instance *clusterstackv1beta1.Config) 
 		return err
 	}
 	return r.renderAndApply(instance, data, "keepalived-daemonset")
+}
+
+func (r *ConfigReconciler) syncMDNS(instance *clusterstackv1beta1.Config) error {
+
+	// TODO:  add here code to check if MDNS resources already exist
+	data := render.MakeRenderData()
+	data.Data["HandlerNamespace"] = os.Getenv("HANDLER_NAMESPACE")
+	data.Data["OnPremPlatformAPIServerInternalIP"] = os.Getenv("ON_PREM_API_VIP")
+	data.Data["OnPremPlatformIngressIP"] = os.Getenv("ON_PREM_INGRESS_VIP")
+
+	err := r.renderAndApply(instance, data, "mdns-configmap")
+	if err != nil {
+		errors.Wrap(err, "failed applying Mdns-configmap ")
+		return err
+	}
+	return r.renderAndApply(instance, data, "mdns-daemonset")
 }
 
 func (r *ConfigReconciler) syncHaproxy(instance *clusterstackv1beta1.Config) error {

@@ -31,6 +31,8 @@ COPY deploy/handler/keepalived/config_template.yaml   /bindata/cluster-hosted/ke
 COPY deploy/handler/keepalived/daemonset.yaml   /bindata/cluster-hosted/keepalived-daemonset/
 COPY deploy/handler/haproxy/config_template.yaml   /bindata/cluster-hosted/haproxy-configmap/
 COPY deploy/handler/haproxy/daemonset.yaml   /bindata/cluster-hosted/haproxy-daemonset/
+COPY deploy/handler/mdns/config_template.yaml   /bindata/cluster-hosted/mdns-configmap/
+COPY deploy/handler/mdns/daemonset.yaml   /bindata/cluster-hosted/mdns-daemonset/
 
 USER nonroot:nonroot
 
