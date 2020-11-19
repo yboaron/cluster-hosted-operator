@@ -33,6 +33,8 @@ COPY deploy/handler/haproxy/config_template.yaml   /bindata/cluster-hosted/hapro
 COPY deploy/handler/haproxy/daemonset.yaml   /bindata/cluster-hosted/haproxy-daemonset/
 COPY deploy/handler/mdns/config_template.yaml   /bindata/cluster-hosted/mdns-configmap/
 COPY deploy/handler/mdns/daemonset.yaml   /bindata/cluster-hosted/mdns-daemonset/
+COPY deploy/handler/coredns/config_template.yaml   /bindata/cluster-hosted/coredns-configmap/
+COPY deploy/handler/coredns/daemonset.yaml   /bindata/cluster-hosted/coredns-daemonset/
 
 USER nonroot:nonroot
 

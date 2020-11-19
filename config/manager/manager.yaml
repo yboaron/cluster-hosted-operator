@@ -47,6 +47,8 @@ spec:
             value: "quay.io/openshift/origin-mdns-publisher"
           - name: COREDNS_IMAGE
             value: "quay.io/openshift/origin-coredns"
+          - name: DNS_BASE_DOMAIN
+            value: "test.metalkube.org"
         image: controller:latest
         name: manager
         resources:
