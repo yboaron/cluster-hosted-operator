@@ -93,6 +93,12 @@ func (r *ConfigReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	err = r.syncCoreDNS(instance)
+	if err != nil {
+		errors.Wrap(err, "failed applying CoreDNS")
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -126,6 +132,25 @@ func (r *ConfigReconciler) syncKeepalived(instance *clusterstackv1beta1.Config) 
 		return err
 	}
 	return r.renderAndApply(instance, data, "keepalived-daemonset")
+}
+
+func (r *ConfigReconciler) syncCoreDNS(instance *clusterstackv1beta1.Config) error {
+
+	// TODO:  add here code to check if CoreDNS resources already exist
+	data := render.MakeRenderData()
+	data.Data["HandlerNamespace"] = os.Getenv("HANDLER_NAMESPACE")
+	data.Data["OnPremPlatformAPIServerInternalIP"] = os.Getenv("ON_PREM_API_VIP")
+	data.Data["OnPremPlatformIngressIP"] = os.Getenv("ON_PREM_INGRESS_VIP")
+	data.Data["BaremetalRuntimeCfgImage"] = os.Getenv("BAREMETAL_RUNTIMECFG_IMAGE")
+	data.Data["CorednsImage"] = os.Getenv("COREDNS_IMAGE")
+	data.Data["DnsBaseDomain"] = os.Getenv("DNS_BASE_DOMAIN")
+
+	err := r.renderAndApply(instance, data, "coredns-configmap")
+	if err != nil {
+		errors.Wrap(err, "failed applying CoreDNS-configmap ")
+		return err
+	}
+	return r.renderAndApply(instance, data, "coredns-daemonset")
 }
 
 func (r *ConfigReconciler) syncMDNS(instance *clusterstackv1beta1.Config) error {
