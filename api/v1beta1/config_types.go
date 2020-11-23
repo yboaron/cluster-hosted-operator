@@ -25,8 +25,19 @@ import (
 
 // ConfigSpec defines the desired state of Config
 type ConfigSpec struct {
-	LoadBalancer EnableDisable `json:"loadbalancer,omitempty"`
-	DNS          EnableDisable `json:"dns,omitempty"`
+	LoadBalancer HaLoadBalanceConfig `json:"loadbalancer,omitempty"`
+	DNS          DnsConfig           `json:"dns,omitempty"`
+}
+
+type HaLoadBalanceConfig struct {
+	DefaultIngressHA  EnableDisable `json:"defaultingressha,omitempty"`
+	ApiIntLoadbalance EnableDisable `json:"apiintloadbalance,omitempty"`
+}
+
+type DnsConfig struct {
+	NodesResolution EnableDisable `json:"nodesresolution,omitempty"`
+	ApiResolution   EnableDisable `json:"apiresolution,omitempty"`
+	AppsResolution  EnableDisable `json:"appsresolution,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Enable;Disable
