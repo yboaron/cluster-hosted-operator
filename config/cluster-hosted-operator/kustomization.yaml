@@ -1,0 +1,12 @@
+resources:
+- cluster-hosted-operator.yaml
+- cluster-hosted-sa.yaml
+- cluster-hosted-ns.yaml
+- cluster-hosted-images.yaml
+
+images:
+- name: controller
+  newName: quay.io/yboaron/cluster-hosted-ctrl
+  newTag: latest
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization

@@ -42,13 +42,16 @@ type ConfigReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=clusterstack.openshift.io,resources=configs,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=clusterstack.openshift.io,resources=configs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=daemonsets/status,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=namespaces;configmaps;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings;rolebindings;roles,verbs="*"
 // +kubebuilder:rbac:groups="security.openshift.io",resources=securitycontextconstraints,verbs=get;list;watch;create;update;patch;delete
++// +kubebuilder:rbac:groups=clusterstack.openshift.io,resources=configs,verbs=get;list;watch;create;update;patch;delete
++// +kubebuilder:rbac:groups=clusterstack.openshift.io,resources=configs/status,verbs=get;update;patch
+
+// +kubebuilder:rbac:namespace=tst-cluster-hosted-operator,groups=clusterstack.openshift.io,resources=configs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:namespace=tst-cluster-hosted-operator,groups=clusterstack.openshift.io,resources=configs/status,verbs=get;update;patch
 
 func (r *ConfigReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctxt := context.Background()

@@ -1,12 +1,25 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: manager-rolebinding
+  name: cluster-hosted-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: manager-role
+  name: cluster-hosted-operator
 subjects:
 - kind: ServiceAccount
-  name: default
-  namespace: system
+  name: cluster-hosted-operator
+  namespace: tst-cluster-hosted-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cluster-hosted-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-hosted-operator
+subjects:
+- kind: ServiceAccount
+  name: cluster-hosted-operator
+  namespace: tst-cluster-hosted-operator

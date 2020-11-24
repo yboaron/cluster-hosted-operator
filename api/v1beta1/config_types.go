@@ -38,6 +38,8 @@ type DnsConfig struct {
 	NodesResolution EnableDisable `json:"nodesresolution,omitempty"`
 	ApiResolution   EnableDisable `json:"apiresolution,omitempty"`
 	AppsResolution  EnableDisable `json:"appsresolution,omitempty"`
+
+	tst1 EnableDisable `json:"tst1,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Enable;Disable
