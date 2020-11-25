@@ -12,6 +12,10 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
+CRD_OPTIONS="crd:trivialVersions=true,crdVersions=v1"
+MANIFEST_PROFILE ?= default
+TMP_DIR := $(shell mktemp -d -t manifests-$(date +%Y-%m-%d-%H-%M-%S)-XXXXXXXXXX)
+
 # Image URL to use all building/pushing image targets
 IMG ?= quay.io/yboaron/cluster-hosted-ctrl:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
@@ -49,15 +53,6 @@ install: manifests kustomize
 uninstall: manifests kustomize
 	$(KUSTOMIZE) build config/crd | $(CLUSTER_CLIENT) delete -f -
 
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests kustomize
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | $(CLUSTER_CLIENT) apply -f -
-
-# Generate manifests e.g. CRD, RBAC etc.
-manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-
 # Run go fmt against code
 fmt:
 	go fmt ./...
@@ -66,9 +61,47 @@ fmt:
 vet:
 	go vet ./...
 
+RBAC_LIST = rbac.authorization.k8s.io_v1_clusterrolebinding_cluster-hosted-operator.yaml \
+	rbac.authorization.k8s.io_v1_clusterrole_cluster-hosted-operator.yaml \
+	rbac.authorization.k8s.io_v1_rolebinding_cluster-hosted-operator.yaml \
+	rbac.authorization.k8s.io_v1_role_cluster-hosted-operator.yaml
+
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy: manifests kustomize
+	ls -v manifests/*.yaml
+	cd config/cluster-hosted-operator && $(KUSTOMIZE) edit set image controller=${IMG}
+	ls -v manifests/*.yaml
+	for i in `ls -v manifests/*.yaml`; do $(CLUSTER_CLIENT) apply -f  $$i; done;	
+
+
+# Generate manifests e.g. CRD, RBAC etc.
+manifests: generate
+	cd  config/cluster-hosted-operator && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/profiles/$(MANIFEST_PROFILE) -o $(TMP_DIR)/
+	ls $(TMP_DIR)
+
+	# now rename/join the output files into the files we expect
+	mv $(TMP_DIR)/~g_v1_namespace_*.yaml manifests/0000_31_cluster-hosted-operator_00_namespace.yaml
+	mv $(TMP_DIR)/~g_v1_serviceaccount_*.yaml manifests/0000_31_cluster-hosted-operator_03_serviceaccount.yaml
+	mv $(TMP_DIR)/~g_v1_configmap_*.yaml manifests/0000_31_cluster-hosted-operator_01_images.configmap.yaml
+	mv $(TMP_DIR)/apiextensions.k8s.io_v1_customresourcedefinition_configs.clusterstack.openshift.io.yaml manifests/0000_31_cluster-hosted-operator_02_configs.crd.yaml
+	mv $(TMP_DIR)/apps_v1_deployment_cluster-hosted-operator.yaml  manifests/0000_31_cluster-hosted-operator_05_deployment.yaml
+	rm -f manifests/0000_31_cluster-hosted-operator_04_rbac.yaml
+	for rbac in $(RBAC_LIST) ; do \
+	cat $(TMP_DIR)/$${rbac} >> manifests/0000_31_cluster-hosted-operator_04_rbac.yaml ;\
+	echo '---' >> manifests/0000_31_cluster-hosted-operator_04_rbac.yaml ;\
+	done
+	rm -rf $(TMP_DIR)
+
 # Generate code
 generate: controller-gen
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+        $(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+		#go generate -x ./...
+		#$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=cluster-hosted-operator webhook paths=./... output:crd:artifacts:config=config/crd/bases
+		#sed -i '/^    controller-gen.kubebuilder.io\/version: (devel)/d' config/crd/bases/*
+		#$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
+
+
 
 # Build the docker image
 docker-build: test
