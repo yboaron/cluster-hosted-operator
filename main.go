@@ -47,10 +47,14 @@ func init() {
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
+	var imagesJSONFilename string
+
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.StringVar(&imagesJSONFilename, "images-json", "/etc/cluster-hosted-operator/images/images.json",
+		"The location of the file containing the images to use for our operands.")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
@@ -68,9 +72,10 @@ func main() {
 	}
 
 	if err = (&controllers.ConfigReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Config"),
-		Scheme: mgr.GetScheme(),
+		Client:         mgr.GetClient(),
+		Log:            ctrl.Log.WithName("controllers").WithName("Config"),
+		Scheme:         mgr.GetScheme(),
+		ImagesFilename: imagesJSONFilename,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Config")
 		os.Exit(1)

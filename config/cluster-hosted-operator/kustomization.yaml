@@ -2,7 +2,6 @@ resources:
 - cluster-hosted-operator.yaml
 - cluster-hosted-sa.yaml
 - cluster-hosted-ns.yaml
-- cluster-hosted-images.yaml
 
 images:
 - name: controller
