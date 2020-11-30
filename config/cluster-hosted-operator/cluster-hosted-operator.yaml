@@ -40,16 +40,6 @@ spec:
           value: "192.168.111.99"
         - name: ON_PREM_INGRESS_VIP
           value: "192.168.111.88"
-        - name: BAREMETAL_RUNTIMECFG_IMAGE
-          value: "quay.io/openshift/origin-baremetal-runtimecfg"
-        - name: HAPROXY_IMAGE
-          value: "quay.io/openshift/origin-haproxy-router"
-        - name: KEEPALIVED_IMAGE
-          value: "quay.io/openshift/origin-keepalived-ipfailover"
-        - name: MDNS_PUBLISHER_IMAGE
-          value: "quay.io/openshift/origin-mdns-publisher"
-        - name: COREDNS_IMAGE
-          value: "quay.io/openshift/origin-coredns"
         - name: DNS_BASE_DOMAIN
           value: "test.metalkube.org"
 

@@ -1,3 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
+  name: cluster-hosted-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-hosted-operator
+subjects:
+- kind: ServiceAccount
+  name: cluster-hosted-operator
+  namespace: cluster-hosted-operator
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -87,6 +101,21 @@ rules:
   - update
   - watch
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
+  name: cluster-hosted-operator
+  namespace: cluster-hosted-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cluster-hosted-operator
+subjects:
+- kind: ServiceAccount
+  name: cluster-hosted-operator
+  namespace: cluster-hosted-operator
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -95,7 +124,7 @@ metadata:
     include.release.openshift.io/self-managed-high-availability: "true"
   creationTimestamp: null
   name: cluster-hosted-operator
-  namespace: tst-cluster-hosted-operator
+  namespace: cluster-hosted-operator
 rules:
 - apiGroups:
   - clusterstack.openshift.io

@@ -22,6 +22,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"encoding/json"
+	"io/ioutil"
+
 	"github.com/go-logr/logr"
 	"github.com/openshift/cluster-network-operator/pkg/apply"
 	"github.com/openshift/cluster-network-operator/pkg/render"
@@ -30,16 +33,40 @@ import (
 
 	"github.com/pkg/errors"
 	clusterstackv1beta1 "github.com/yboaron/cluster-hosted-operator/api/v1beta1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var containerImages *Images
+
+type Images struct {
+	BaremetalRuntimecfg  string `json:"baremetalRuntimecfg"`
+	HaproxyRouter        string `json:"haproxyRouter"`
+	KeepalivedIpfailover string `json:"keepalivedIpfailover"`
+	MdnsPublisher        string `json:"mdnsPublisher"`
+	Coredns              string `json:"coredns"`
+}
+
+func getContainerImages(containerImages *Images, imagesFilePath string) error {
+	//read images.json file
+	jsonData, err := ioutil.ReadFile(filepath.Clean(imagesFilePath))
+	if err != nil {
+		return fmt.Errorf("unable to read file %s", imagesFilePath)
+	}
+	if err := json.Unmarshal(jsonData, containerImages); err != nil {
+		return fmt.Errorf("unable to unmarshal image names from file %s ", imagesFilePath)
+	}
+	return nil
+}
+
 // ConfigReconciler reconciles a Config object
 type ConfigReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log            logr.Logger
+	Scheme         *runtime.Scheme
+	ImagesFilename string
 }
 
 // +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
@@ -65,6 +92,24 @@ func (r *ConfigReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	r.Log.Info("Returned object name", "name", req.NamespacedName.Name)
+
+	if containerImages == nil {
+		containerImages = new(Images)
+
+		if err := getContainerImages(containerImages, r.ImagesFilename); err != nil {
+			// FIXME: set containerImages to nil so in case of error we'll try to retrieve the images in next request
+			containerImages = nil
+			// Images config map is not valid
+			// Requeue request.
+			r.Log.Error(err, "invalid contents in images Config Map")
+			/*
+				co_err := r.updateCOStatus(ReasonInvalidConfiguration, err.Error(), "invalid contents in images Config Map")
+				if co_err != nil {
+					return ctrl.Result{}, fmt.Errorf("unable to put %q ClusterOperator in Degraded state: %v", clusterOperatorName, co_err)
+				} */
+			return ctrl.Result{}, err
+		}
+	}
 
 	err = r.syncNamespace(instance)
 	if err != nil {
@@ -126,8 +171,8 @@ func (r *ConfigReconciler) syncKeepalived(instance *clusterstackv1beta1.Config) 
 	data.Data["HandlerNamespace"] = os.Getenv("HANDLER_NAMESPACE")
 	data.Data["OnPremPlatformAPIServerInternalIP"] = os.Getenv("ON_PREM_API_VIP")
 	data.Data["OnPremPlatformIngressIP"] = os.Getenv("ON_PREM_INGRESS_VIP")
-	data.Data["BaremetalRuntimeCfgImage"] = os.Getenv("BAREMETAL_RUNTIMECFG_IMAGE")
-	data.Data["KeepalivedImage"] = os.Getenv("KEEPALIVED_IMAGE")
+	data.Data["BaremetalRuntimeCfgImage"] = containerImages.BaremetalRuntimecfg
+	data.Data["KeepalivedImage"] = containerImages.KeepalivedIpfailover
 
 	err := r.renderAndApply(instance, data, "keepalived-configmap")
 	if err != nil {
@@ -144,8 +189,8 @@ func (r *ConfigReconciler) syncCoreDNS(instance *clusterstackv1beta1.Config) err
 	data.Data["HandlerNamespace"] = os.Getenv("HANDLER_NAMESPACE")
 	data.Data["OnPremPlatformAPIServerInternalIP"] = os.Getenv("ON_PREM_API_VIP")
 	data.Data["OnPremPlatformIngressIP"] = os.Getenv("ON_PREM_INGRESS_VIP")
-	data.Data["BaremetalRuntimeCfgImage"] = os.Getenv("BAREMETAL_RUNTIMECFG_IMAGE")
-	data.Data["CorednsImage"] = os.Getenv("COREDNS_IMAGE")
+	data.Data["BaremetalRuntimeCfgImage"] = containerImages.BaremetalRuntimecfg
+	data.Data["CorednsImage"] = containerImages.Coredns
 	data.Data["DnsBaseDomain"] = os.Getenv("DNS_BASE_DOMAIN")
 
 	err := r.renderAndApply(instance, data, "coredns-configmap")
@@ -163,8 +208,8 @@ func (r *ConfigReconciler) syncMDNS(instance *clusterstackv1beta1.Config) error 
 	data.Data["HandlerNamespace"] = os.Getenv("HANDLER_NAMESPACE")
 	data.Data["OnPremPlatformAPIServerInternalIP"] = os.Getenv("ON_PREM_API_VIP")
 	data.Data["OnPremPlatformIngressIP"] = os.Getenv("ON_PREM_INGRESS_VIP")
-	data.Data["BaremetalRuntimeCfgImage"] = os.Getenv("BAREMETAL_RUNTIMECFG_IMAGE")
-	data.Data["MdnsPublisherImage"] = os.Getenv("MDNS_PUBLISHER_IMAGE")
+	data.Data["BaremetalRuntimeCfgImage"] = containerImages.BaremetalRuntimecfg
+	data.Data["MdnsPublisherImage"] = containerImages.MdnsPublisher
 
 	err := r.renderAndApply(instance, data, "mdns-configmap")
 	if err != nil {
@@ -180,8 +225,8 @@ func (r *ConfigReconciler) syncHaproxy(instance *clusterstackv1beta1.Config) err
 	data := render.MakeRenderData()
 	data.Data["HandlerNamespace"] = os.Getenv("HANDLER_NAMESPACE")
 	data.Data["OnPremPlatformAPIServerInternalIP"] = os.Getenv("ON_PREM_API_VIP")
-	data.Data["BaremetalRuntimeCfgImage"] = os.Getenv("BAREMETAL_RUNTIMECFG_IMAGE")
-	data.Data["HaproxyImage"] = os.Getenv("HAPROXY_IMAGE")
+	data.Data["BaremetalRuntimeCfgImage"] = containerImages.BaremetalRuntimecfg
+	data.Data["HaproxyImage"] = containerImages.HaproxyRouter
 
 	err := r.renderAndApply(instance, data, "haproxy-configmap")
 	if err != nil {

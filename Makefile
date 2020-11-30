@@ -18,8 +18,6 @@ TMP_DIR := $(shell mktemp -d -t manifests-$(date +%Y-%m-%d-%H-%M-%S)-XXXXXXXXXX)
 
 # Image URL to use all building/pushing image targets
 IMG ?= quay.io/yboaron/cluster-hosted-ctrl:latest
-# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -83,7 +81,6 @@ manifests: generate
 	# now rename/join the output files into the files we expect
 	mv $(TMP_DIR)/~g_v1_namespace_*.yaml manifests/0000_31_cluster-hosted-operator_00_namespace.yaml
 	mv $(TMP_DIR)/~g_v1_serviceaccount_*.yaml manifests/0000_31_cluster-hosted-operator_03_serviceaccount.yaml
-	mv $(TMP_DIR)/~g_v1_configmap_*.yaml manifests/0000_31_cluster-hosted-operator_01_images.configmap.yaml
 	mv $(TMP_DIR)/apiextensions.k8s.io_v1_customresourcedefinition_configs.clusterstack.openshift.io.yaml manifests/0000_31_cluster-hosted-operator_02_configs.crd.yaml
 	mv $(TMP_DIR)/apps_v1_deployment_cluster-hosted-operator.yaml  manifests/0000_31_cluster-hosted-operator_05_deployment.yaml
 	rm -f manifests/0000_31_cluster-hosted-operator_04_rbac.yaml
@@ -95,11 +92,10 @@ manifests: generate
 
 # Generate code
 generate: controller-gen
-        $(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-		#go generate -x ./...
-		#$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=cluster-hosted-operator webhook paths=./... output:crd:artifacts:config=config/crd/bases
-		#sed -i '/^    controller-gen.kubebuilder.io\/version: (devel)/d' config/crd/bases/*
-		#$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
+		go generate -x ./...
+		$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=cluster-hosted-operator webhook paths=./... output:crd:artifacts:config=config/crd/bases
+		sed -i '/^    controller-gen.kubebuilder.io\/version: (devel)/d' config/crd/bases/*
+		$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths="./..."
 
 
 
