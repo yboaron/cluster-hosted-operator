@@ -22,9 +22,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"encoding/json"
-	"io/ioutil"
-
 	"github.com/go-logr/logr"
 	"github.com/openshift/cluster-network-operator/pkg/apply"
 	"github.com/openshift/cluster-network-operator/pkg/render"
@@ -34,32 +31,14 @@ import (
 	"github.com/pkg/errors"
 	clusterstackv1beta1 "github.com/yboaron/cluster-hosted-operator/api/v1beta1"
 
+	"github.com/yboaron/cluster-hosted-operator/pkg/images"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var containerImages *Images
-
-type Images struct {
-	BaremetalRuntimecfg  string `json:"baremetalRuntimecfg"`
-	HaproxyRouter        string `json:"haproxyRouter"`
-	KeepalivedIpfailover string `json:"keepalivedIpfailover"`
-	MdnsPublisher        string `json:"mdnsPublisher"`
-	Coredns              string `json:"coredns"`
-}
-
-func getContainerImages(containerImages *Images, imagesFilePath string) error {
-	//read images.json file
-	jsonData, err := ioutil.ReadFile(filepath.Clean(imagesFilePath))
-	if err != nil {
-		return fmt.Errorf("unable to read file %s", imagesFilePath)
-	}
-	if err := json.Unmarshal(jsonData, containerImages); err != nil {
-		return fmt.Errorf("unable to unmarshal image names from file %s ", imagesFilePath)
-	}
-	return nil
-}
+var containerImages *images.Images
 
 // ConfigReconciler reconciles a Config object
 type ConfigReconciler struct {
@@ -94,9 +73,9 @@ func (r *ConfigReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	r.Log.Info("Returned object name", "name", req.NamespacedName.Name)
 
 	if containerImages == nil {
-		containerImages = new(Images)
+		containerImages = new(images.Images)
 
-		if err := getContainerImages(containerImages, r.ImagesFilename); err != nil {
+		if err := images.GetContainerImages(containerImages, r.ImagesFilename); err != nil {
 			// FIXME: set containerImages to nil so in case of error we'll try to retrieve the images in next request
 			containerImages = nil
 			// Images config map is not valid
