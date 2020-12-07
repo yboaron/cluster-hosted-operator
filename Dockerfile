@@ -15,6 +15,7 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 
 COPY --from=builder /go/src/github.com/yboaron/cluster-hosted/bin/manager .
+COPY --from=builder /go/src/github.com/yboaron/cluster-hosted/manifests /manifests
 COPY deploy/handler/role.yaml   /bindata/cluster-hosted/rbac/
 COPY deploy/handler/role_binding.yaml   /bindata/cluster-hosted/rbac/
 COPY deploy/handler/service_account.yaml   /bindata/cluster-hosted/rbac/

@@ -82,7 +82,7 @@ manifests: generate
 	mv $(TMP_DIR)/~g_v1_namespace_*.yaml manifests/0000_31_cluster-hosted-operator_00_namespace.yaml
 	mv $(TMP_DIR)/~g_v1_serviceaccount_*.yaml manifests/0000_31_cluster-hosted-operator_03_serviceaccount.yaml
 	mv $(TMP_DIR)/apiextensions.k8s.io_v1_customresourcedefinition_configs.clusterstack.openshift.io.yaml manifests/0000_31_cluster-hosted-operator_02_configs.crd.yaml
-	mv $(TMP_DIR)/apps_v1_deployment_cluster-hosted-operator.yaml  manifests/0000_31_cluster-hosted-operator_05_deployment.yaml
+	mv $(TMP_DIR)/apps_v1_deployment_cluster-hosted-net-services-operator.yaml  manifests/0000_31_cluster-hosted-operator_05_deployment.yaml
 	rm -f manifests/0000_31_cluster-hosted-operator_04_rbac.yaml
 	for rbac in $(RBAC_LIST) ; do \
 	cat $(TMP_DIR)/$${rbac} >> manifests/0000_31_cluster-hosted-operator_04_rbac.yaml ;\

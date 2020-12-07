@@ -3,7 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cluster-hosted-operator-images
-  namespace: cluster-hosted-operator
+  namespace: cluster-hosted-net-services-operator
 data:
   images.json: >
     {

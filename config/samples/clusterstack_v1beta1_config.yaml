@@ -4,5 +4,10 @@ metadata:
   name: config-sample
 spec:
   # Add fields here
-  dns: Enable
-  loadbalancer: Enable
+  dns:
+    nodesresolution: Enable
+    apiresolution: Enable
+    appsresolution: Enable    
+  loadbalancer:
+    apiloadbalance: Enable
+    defaultingressha: Enable

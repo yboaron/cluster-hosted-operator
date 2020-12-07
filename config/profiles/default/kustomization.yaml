@@ -1,4 +1,4 @@
-namespace: cluster-hosted-operator
+namespace: cluster-hosted-net-services-operator
 
 commonAnnotations:
   include.release.openshift.io/self-managed-high-availability: "true"

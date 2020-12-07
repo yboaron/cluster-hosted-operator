@@ -65,6 +65,34 @@ rules:
   - patch
   - update
 - apiGroups:
+  - config.openshift.io
+  resources:
+  - clusteroperators
+  - clusteroperators/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - infrastructures
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - infrastructures
+  - infrastructures/status
+  verbs:
+  - get
+- apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings

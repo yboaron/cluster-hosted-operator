@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cluster-hosted-operator
+  name: cluster-hosted-net-services-operator
   namespace: system
   labels:
     k8s-app: cluster-hosted-operator
@@ -35,7 +35,7 @@ spec:
         - name: METRICS_PORT
           value: "8080"
         - name: HANDLER_NAMESPACE
-          value: "cluster-hosted"
+          value: "cluster-hosted-net-services"
         - name: ON_PREM_API_VIP
           value: "192.168.111.99"
         - name: ON_PREM_INGRESS_VIP

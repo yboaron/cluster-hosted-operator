@@ -20,15 +20,18 @@ import (
 	"flag"
 	"os"
 
+	osclientset "github.com/openshift/client-go/config/clientset/versioned"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	clusterstackv1beta1 "github.com/yboaron/cluster-hosted-operator/api/v1beta1"
 	"github.com/yboaron/cluster-hosted-operator/controllers"
+	"github.com/yboaron/cluster-hosted-operator/pkg/names"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -59,7 +62,13 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	releaseVersion := os.Getenv("RELEASE_VERSION")
+	if releaseVersion == "" {
+		ctrl.Log.Info("Environment variable RELEASE_VERSION not provided")
+	}
+
+	config := ctrl.GetConfigOrDie()
+	mgr, err := ctrl.NewManager(config, ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
 		Port:               9443,
@@ -71,11 +80,29 @@ func main() {
 		os.Exit(1)
 	}
 
+	osClient := osclientset.NewForConfigOrDie(rest.AddUserAgent(config, names.ControllerComponentName))
+	// Check the Platform Type to determine the state of the CO
+	enabled, err := controllers.IsEnabled(osClient)
+	if err != nil {
+		setupLog.Error(err, "could not determine whether to run")
+		os.Exit(1)
+	}
+	if !enabled {
+		//Set ClusterOperator status to disabled=true, available=true
+		err = controllers.SetCOInDisabledState(osClient, releaseVersion)
+		if err != nil {
+			setupLog.Error(err, "unable to set baremetal ClusterOperator to Disabled")
+			os.Exit(1)
+		}
+	}
+
 	if err = (&controllers.ConfigReconciler{
 		Client:         mgr.GetClient(),
 		Log:            ctrl.Log.WithName("controllers").WithName("Config"),
 		Scheme:         mgr.GetScheme(),
 		ImagesFilename: imagesJSONFilename,
+		OSClient:       osClient,
+		ReleaseVersion: releaseVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Config")
 		os.Exit(1)

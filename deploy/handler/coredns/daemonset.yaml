@@ -63,7 +63,7 @@ spec:
           mountPath: "/etc/coredns"
         imagePullPolicy: IfNotPresent
       containers:
-      - name: coredns
+      - name: cluster-hosted-coredns
         securityContext:
           privileged: true
         image: {{ .CorednsImage }}
@@ -98,7 +98,7 @@ spec:
           failureThreshold: 5
         terminationMessagePolicy: FallbackToLogsOnError
         imagePullPolicy: IfNotPresent
-      - name: coredns-monitor
+      - name: cluster-hosted-coredns-monitor
         securityContext:
           privileged: true
         image: {{ .BaremetalRuntimeCfgImage }}
